@@ -1,113 +1,181 @@
 # BT4301-Assignments : DataOps and MLOps Assignments done in BT4301 module in NUS
-# DataOps
-## Task A:
- 
+## DataOps
+### Task A:
+<p align="center">
+ <img width="452" height="301" alt="image" src="https://github.com/user-attachments/assets/f2dc5006-1c6d-4804-9e49-89155e8c3d02" />
+</p>
 The above star schema is designed for store-customer sales analysis in the AdventureWorks data warehouse. For the dimension tables, we have the basic dimensions (store) customer, product, time and the additional dimension salesperson. dim_store_customer captures the store customer entity, including store name, account number, territory, and assigned salesperson. dim_product provides rich product attributes such as category, subcategory, model, size, cost, and list price, enabling product-level and profitability analysis. dim_time standardizes date-based reporting by providing day, month, quarter, year, week, and weekend indicators. dim_salesperson is the additional dimension introduced beyond customer, product, and time, and it supports analysis of sales performance by representative. 
+
 The central table is fact_store_sales, at the grain of one sales order line per store customer transaction. It stores the measurable sales values such as quantity, unit price, gross amount, discount amount, margin amount, net amount, and header-level charges like tax and freight. The fact table links to four dimensions through surrogate keys, which supports efficient analytical queries and keeps the schema stable even if source-system business keys change. 
+
 For the sales fact table, three additional row-level transformations were introduced to make the data more useful for store-customer analysis. These transformations were chosen such that they do not rely on direct aggregations like sum, mean, or median, since those can already be performed later through the star schema.
 •	The first transformation is gross amount, calculated as order_qty × unit_price. This represents the original value of each sales order line before any discount is applied. It is useful for understanding the base sales value of store purchases and for comparing pre-discount and post-discount performance.
 •	The second transformation is discount amount, calculated as order_qty × unit_price × unit_price_discount. This captures the monetary value of the discount applied to each order line. For store customers, who often receive negotiated or volume-based discounts, this measure helps analyse the effect of discounting on sales transactions.
 
 •	The third transformation is margin amount, calculated as net_amount − (order_qty × standard_cost). This provides an estimated profit contribution for each sales order line after accounting for product cost. It is especially relevant for store customers because it allows profitability to be analysed at transaction level rather than only sales value.
-The raw_store_sales table is also retained alongside the transformed star schema, which is good design practice because it preserves the original extracted transactional data for traceability, auditing, and reprocessing. Overall, this schema is well suited for descriptive analytics on store sales, especially for studying customer buying patterns, product performance, time trends, discounts, and salesperson contribution.
-The file assignment1_etl.ipynb contains a one-time test of the ETL flow. It extracts data from the source AdventureWorks database using the MySQL connector, applies star schema transformations specific to store-customer-level data based on the schema diagram above, and implements the required row-level transformations for additional analysis without discarding the raw fact data. The transformed data is then loaded into a destination MySQL database, datawarehouse, which simulates a data warehouse. This test flow ingests data for only the first month.
-After the flow was tested successfully, it was automated and orchestrated using an Airflow DAG in the file assignment1_etl_airflow.py. The DAG is designed to load dimension and fact data into the warehouse according to the same tested notebook flow, one month at a time at regular intervals (5 minutes). 
 
- 
+The raw_store_sales table is also retained alongside the transformed star schema, which is good design practice because it preserves the original extracted transactional data for traceability, auditing, and reprocessing. Overall, this schema is well suited for descriptive analytics on store sales, especially for studying customer buying patterns, product performance, time trends, discounts, and salesperson contribution.
+
+The file assignment1_etl.ipynb contains a one-time test of the ETL flow. It extracts data from the source AdventureWorks database using the MySQL connector, applies star schema transformations specific to store-customer-level data based on the schema diagram above, and implements the required row-level transformations for additional analysis without discarding the raw fact data. The transformed data is then loaded into a destination MySQL database, datawarehouse, which simulates a data warehouse. This test flow ingests data for only the first month.
+
+After the flow was tested successfully, it was automated and orchestrated using an Airflow DAG in the file assignment1_etl_airflow.py. The DAG is designed to load dimension and fact data into the warehouse according to the same tested notebook flow, one month at a time at regular intervals (5 minutes). 
+<p align="center">
+ <img width="452" height="149" alt="image" src="https://github.com/user-attachments/assets/cfff7749-8c3e-4585-81b0-8ee222cf7edd" />
+</p>
 do_nothing is skipped and shown in maroon for the runs where the period value is between 1 and 37 because the branch condition sends the DAG to the ETL path instead. In Airflow, tasks on the non-selected branch are automatically marked as skipped, which is why do_nothing appears maroon in those runs.
- 
+<p align="center">
+ <img width="452" height="94" alt="image" src="https://github.com/user-attachments/assets/8b98c672-192a-41fa-9ee4-356d78b5ad16" />
+</p>
 To manage the monthly ingestion systematically, it maintains a variable that increments each time a month’s data is successfully loaded into the warehouse. Since the source data is available for only 37 months, the ETL pipeline does not trigger once the variable value exceeds 37. 
-## Task B:
+
+### Task B:
 The file assignment1_visualisation.ipynb implements three additional operations using only the data already loaded into the datawarehouse, beyond those shown in the sample code.
 The first operation is data profiling. The notebook performs basic quality checks on the warehouse data, such as duplicate fact rows, missing dimension attributes, invalid discount values, and non-positive quantity or price values. This was done to confirm that the loaded store-customer sales data is suitable for analysis.
+
 The second operation is data cleansing for analytical use. A cleaned analytical dataset was created from the warehouse data by removing duplicate order-line records and filtering out rows with invalid business values. The warehouse tables themselves were not modified, so the raw loaded data was preserved.
+
 The third operation is descriptive analytics for store customers. Using the cleaned warehouse data, several visualisations were created to analyse store-customer performance from different perspectives. 
- 
+<p align="center">
+ <img width="452" height="204" alt="image" src="https://github.com/user-attachments/assets/94fa22fa-8bc4-4977-bcb7-2af507867424" />
+</p>
 The first visualisation, Top 10 Store Customers by Net Sales with Margin %, shows the highest-revenue store customers while also indicating their margin percentage. This helps distinguish customers who generate high sales from those who are actually profitable. For example, although some stores contribute large net sales, many of them have negative margins, which highlights potentially unprofitable customer relationships.
- 
+<p align="center">
+ <img width="452" height="270" alt="image" src="https://github.com/user-attachments/assets/c271ef9d-2ab0-428d-91b0-504f461bb0e1" />
+</p>
 The second visualisation, Discount Ratio vs Margin % by Store Customer, examines whether store profitability is being affected by discounting. Each point represents a store customer, with the x-axis showing discount ratio and the y-axis showing margin percentage. This visual helps identify customers who receive relatively higher discounts but still yield weak or negative margins, making it useful for pricing and negotiation analysis.
- 
+<p align="center">
+ <img width="452" height="224" alt="image" src="https://github.com/user-attachments/assets/574cecc5-7c80-4f71-97b6-91e793b644b8" />
+</p>
 The third visualisation, Top Product Categories for Store Customers: Net Sales and Margin %, compares product categories by both sales volume and profitability. The bars show net sales while the line shows margin percentage. This helps identify categories that drive revenue versus categories that drive profit. In the results, Bikes contribute the highest net sales, while Accessories show the strongest margin percentage despite much lower sales volume.
- 
+<p align="center">
+ <img width="452" height="224" alt="image" src="https://github.com/user-attachments/assets/6ae83ecd-1b05-46fa-b570-dc2102b11ee1" />
+</p>
 The fourth visualisation, Top 10 Salespeople by Store-Customer Margin, evaluates salesperson performance based on the margin generated from store-customer sales. This goes beyond sales volume by focusing on profitability contribution. The chart helps identify which salespeople are associated with stronger or weaker profit performance across store accounts.
 Together, these profiling, cleansing, and descriptive analytics operations show how the warehouse can be used not only for storing transformed data, but also for validating data quality and generating meaningful business insights for store customers.
-## Task C:
+
+### Task C:
+
 The file assignment1_watermark.py implements a new Airflow DAG to perform data watermarking on the fact_store_sales table in the datawarehouse. The DAG follows the required SHA256-based watermarking approach using Python’s hashlib module. It first checks whether the fingerprint column exists in the existing sales fact table and appends it if necessary, without creating a new table. It then computes a SHA256 fingerprint for each fact record based on a fixed set of business and measure columns and updates rows whose fingerprint is missing. Since the fingerprint is stored as an additional nullable column in the same fact table, the existing ETL pipeline is not disrupted. 
-The file assignment1_watermark_verify.py implements a second Airflow DAG to verify the integrity of the fingerprint field periodically. This DAG is scheduled to run once daily and recomputes the SHA256 fingerprint for every row in fact_store_sales, comparing the recomputed value with the stored fingerprint. Any row with a missing or mismatched fingerprint is treated as unverified and written to a log file stored in the configured log directory. The log filename is generated using the start time of the DAG run in the required YYYYMMDDHHMM.log format. 
+
+The file assignment1_watermark_verify.py implements a second Airflow DAG to verify the integrity of the fingerprint field periodically. This DAG is scheduled to run once daily and recomputes the SHA256 fingerprint for every row in fact_store_sales, comparing the recomputed value with the stored fingerprint. Any row with a missing or mismatched fingerprint is treated as unverified and written to a log file stored in the configured log directory. The log filename is generated using the start time of the DAG run in the required YYYYMMDDHHMM.log format.
+
 To test the verification process, certain records in the sales fact table were manually modified after watermarking had already been applied. 
 For example, the following updates were done through MySQL in terminal:
+```sql
 UPDATE fact_store_sales
 SET net_amount = net_amount + 10
 WHERE fact_store_sales_key = 1;
+```
 -------------------------------------------------
+```sql
 UPDATE fact_store_sales
 SET order_qty = order_qty + 1
 WHERE fact_store_sales_key = 2;
+```
 When the verification DAG was run, these modified records were correctly identified as fingerprint mismatches and written to the log file. 
 Log file: (202603221838.log)
+```bash
 FINGERPRINT_MISMATCH | fact_store_sales_key=1 | sales_order_id=43659 | sales_order_detail_id=1 | stored=3d670963144b992b1882bc9eceb9c603c90ce6c15d8d211c5705105b0b07e548 | expected=89afd003eadf44bcfa1ad1f82c88631e8fd2f9bcf62f7775a29be29d1095ee8e 
 FINGERPRINT_MISMATCH | fact_store_sales_key=2 | sales_order_id=43659 | sales_order_detail_id=2 | stored=1901042d28d4d7b4490bbc137f4ca1f253c7867921cf0f63ef36c8789b4e3f94 | expected=2616d63d18d8cf528549b671c2ea38275044486158ebe6a1e640a3155f94a6bb
+```
 The generated log confirms that the integrity-checking mechanism is functioning as intended and is able to detect unintended changes made to the warehouse fact data. 
 
-# MLOps
-## Task A (Problem Formulation):
-Business Question: Can we predict the expected sales demand and revenue for each product across stores/customer segments in the next sales period using historical sales transactions and related dimension data? 
-Business Challenge/Opportunity: From the previous Individual Assignment, the data warehouse contains a detailed fact_store_sales table connected to key dimensions such as product, customer/store, time, and salesperson. This allows the business to understand not just what was sold, but also where it was sold, when it was sold, who sold it, and which customer or store segment generated the sale.
+## MLOps
+### Task A (Problem Formulation):
+
+**Business Question:** Can we predict the expected sales demand and revenue for each product across stores/customer segments in the next sales period using historical sales transactions and related dimension data? 
+
+**Business Challenge/Opportunity:** From the DataOps, the data warehouse contains a detailed fact_store_sales table connected to key dimensions such as product, customer/store, time, and salesperson. This allows the business to understand not just what was sold, but also where it was sold, when it was sold, who sold it, and which customer or store segment generated the sale.
+
 The main business challenge is that sales demand is not constant. It can change depending on product categories and subcategories, store locations, customer territories, seasonal periods, salesperson performance, customer buying behaviour, pricing, discounts, and product cost or margin patterns.
 Without predictive analytics, the business mainly relies on historical reports and reacts after sales have already happened. This can result in inaccurate inventory planning, missed sales opportunities, excess stock for slow-moving products, and less effective sales targeting.
+
 By predicting future product-level demand or revenue, the business can plan inventory more accurately, identify high-demand products earlier, improve stock allocation across stores, support sales teams with better forecasts, and make better revenue and profit margin plans.
+
 Overall, the opportunity is to move from purely descriptive reporting to more forward-looking sales planning, where historical sales data is used to support better business decisions before the next sales period begins.
+
 Analytics solution to be implemented: The proposed analytics solution is to build a supervised machine learning regression model to predict future sales demand or revenue at a product-store-period level.
+
 The main dependent variable for the model is next_period_net_sales, which represents the expected net sales for the next sales period. To create this target variable, the transaction-level data from fact_store_sales can be aggregated into a monthly product-store dataset. For example, each row can represent a specific product sold to a specific store or customer segment in a particular month, with fields such as total quantity sold, net sales, margin, discount, and related product, customer, time, and salesperson attributes.
+
 The model then learns historical sales patterns from these aggregated records and predicts the next period’s net sales value. Since the output is a continuous numerical value, this is a regression prediction problem.
+
 In business terms, the solution predicts the expected net sales amount for a product in a store or customer segment in the next month. This allows the business to move from simply reviewing past sales to proactively forecasting demand and planning inventory, sales targeting, and revenue expectations more effectively.
-## Task B (Model Development):
+
+### Task B (Model Development):
 The model development process started with a baseline supervised regression model to predict next_period_net_sales, which represents the expected net sales for a product-store/customer combination in the next sales period. The independent variables included product attributes, store/customer information, salesperson information, time-based features, current-period sales measures, lag features such as previous_month_sales, rolling demand features such as rolling_avg_sales_3m, margin, discount, and other engineered business features. The dataset was split into 70% training, 10% validation, and 20% testing to ensure that model selection and final evaluation were kept separate. 
+
 The baseline model used Linear Regression, with standard preprocessing steps including missing value imputation, scaling for numerical variables, and one-hot encoding for categorical variables. Three alternative models were then developed: Ridge Regression, Random Forest Regressor, and Gradient Boosting Regressor. Ridge Regression was included as a regularised linear model to reduce overfitting compared to ordinary linear regression, while Random Forest and Gradient Boosting were included because tree-based ensemble models can capture non-linear relationships and interaction effects between product, store, pricing, discount, and historical demand variables. All models were evaluated using the same metrics: MAE, RMSE, and R², so that performance could be compared consistently. 
- 
+<p align="center">
+ <img width="452" height="242" alt="image" src="https://github.com/user-attachments/assets/b7c08913-58e4-4911-943d-fd16e86a765e" />
 Figure B1: MLflow experiment comparison chart showing Linear Regression, Ridge Regression, Random Forest, and Gradient Boosting with validation/test MAE, RMSE, and R².
+</p>
 MLflow was used to track the full model development lifecycle. For each model, the experiment logged the algorithm, hyperparameters, preprocessing pipeline, evaluation metrics, model signature, input example, and registered model artifact. This made it possible to compare model performance in a structured way and reproduce each experiment later. After the initial model comparison, the two strongest production candidates, Random Forest and Gradient Boosting, were further refined using SHAP-based feature importance. The SHAP values were sorted in descending order of absolute feature importance, and only the features required to capture approximately 95% of the total feature importance were retained. This reduced the number of input features, making the final models easier to explain, deploy, and use in the web application, while still preserving most of the predictive signal. 
- 
+<p align="center">
+ <img width="452" height="275" alt="image" src="https://github.com/user-attachments/assets/36967569-b507-4027-bb87-f2a69f50a7f3" />
 Figure B2: SHAP feature importance table for Random Forest showing selected features and cumulative importance up to 95%.
- 
+</p>
+<p align="center">
+ <img width="452" height="254" alt="image" src="https://github.com/user-attachments/assets/09ad40d2-8639-4f6e-b776-8b16c29874a1" />
 Figure B3: SHAP feature importance table for Gradient Boosting showing selected features and cumulative importance up to 95%.
+</p>
 Based on the MLflow evaluation results, the best model selected for productionisation was Random Forest, because it achieved the best or most acceptable balance of predictive performance and deployability. Compared with the baseline Linear Regression model, the selected model achieved a lower test RMSE of 1284.79 compared to the baseline RMSE of 1305.21, and a better R² of 0.65 compared to 0.62. The improvement suggests that the selected model was better able to capture complex demand patterns across products, stores/customer segments, time periods, discount behaviour, margin patterns, and historical sales trends. In addition, the reduced SHAP-selected feature set made the production model more suitable for deployment, because the web application only needs to collect the most important business inputs from the user, while derived features such as quarter, seasonality flags, discount percentage, and sales growth can be calculated automatically.
- 
+<p align="center">
+ <img width="452" height="163" alt="image" src="https://github.com/user-attachments/assets/183fdace-ac46-4254-aaa7-eb8effa9afc1" />
 Figure B4: MLflow registered models page showing the registered versions of Linear Regression, Ridge Regression, Random Forest, and Gradient Boosting.
- 
+</p>
+<p align="center">
+ <img width="452" height="223" alt="image" src="https://github.com/user-attachments/assets/b6c1406f-f32e-486d-aba5-cf88ba24c421" />
 Figure B5: Best model run page in MLflow showing logged parameters, metrics, model artifact, and registered model version.
-Model	Feature Set	Key Hyperparameters	Test MAE	Test RMSE	Test R²	Remarks
-Linear Regression	Full features (41)	Default	681.21	1305.21	0.62	Baseline
-Ridge Regression	Full features (41)	alpha = 100.0	677.93	1304.48	0.62	Regularised linear model
-Random Forest	SHAP-reduced  (20)	n_estimators = 200, max_depth = 12,
-min_samples_leaf = 2,
-min_samples_split = 2	652.86	1290.04	0.63	Non-linear ensemble
-Gradient Boosting	SHAP-reduced (19)	n_estimators = 100, learning_rate = 0.1, max_depth = 4	648.53	1284.79	0.63	Boosted ensemble
+</p>
+<p align="center">
+<img width="468" height="250" alt="image" src="https://github.com/user-attachments/assets/b6a94851-9c8d-4d62-983b-6128d5421ca3" />
 Table : Test-set performance comparison of the four regression models.
-## Task C (Model Productionisation):
-For model productionisation, the selected forecasting solution was deployed as a REST web service using FastAPI and packaged inside a Docker container so that the prediction service could run in a consistent and reproducible environment. The API was integrated with the MLflow workflow and designed to load production-ready model artifacts at runtime, rather than relying on manually copied model files. This ensures that the deployed model remains aligned with the model tracked and registered during experimentation. Although one best model was identified for production based on evaluation metrics, the two strongest candidate models, Gradient Boosting and Random Forest, were both exposed through the API to support A/B testing in the downstream web application. This design allows the system to compare two strong production candidates under real usage conditions while still keeping the deployment architecture simple and model-driven. The deployed service exposes operational endpoints such as /health, /models, and /predict. The /health endpoint was used to verify that the containerised service was running correctly and that the model loading step had completed successfully. As shown in Figure C1, the health check returned a healthy status and confirmed that the service had successfully loaded both candidate models. 
+</p>
+
+### Task C (Model Productionisation):
+For model productionisation, the selected forecasting solution was deployed as a REST web service using FastAPI and packaged inside a Docker container so that the prediction service could run in a consistent and reproducible environment. The API was integrated with the MLflow workflow and designed to load production-ready model artifacts at runtime, rather than relying on manually copied model files. This ensures that the deployed model remains aligned with the model tracked and registered during experimentation. Although one best model was identified for production based on evaluation metrics, the two strongest candidate models, Gradient Boosting and Random Forest, were both exposed through the API to support A/B testing in the downstream web application. This design allows the system to compare two strong production candidates under real usage conditions while still keeping the deployment architecture simple and model-driven. The deployed service exposes operational endpoints such as /health, /models, and /predict. The /health endpoint was used to verify that the containerised service was running correctly and that the model loading step had completed successfully. As shown in Figure C1, the health check returned a healthy status and confirmed that the service had successfully loaded both candidate models.
+<p align="center">
+<img width="452" height="59" alt="image" src="https://github.com/user-attachments/assets/167aa7d5-cc63-4067-8c9a-075774a33db2" />
 Figure C1: FastAPI /health endpoint confirming successful service startup and model loading
+</p>
  The /models endpoint was also used to inspect the loaded model metadata, including model name, required features, MLflow run information, and the evaluation metric used for model selection. As shown in Figure C2, this endpoint confirmed that the deployed service was connected to the MLflow model artifacts and had access to the required production model details.
- 
+ <p align="center">
+ <img width="451" height="116" alt="image" src="https://github.com/user-attachments/assets/511a2070-f569-4164-8ac2-948645349cf9" />
 Figure C2: FastAPI /models endpoint showing deployed model metadata and MLflow-linked model details
+ </p>
 To validate the inference service, the /predict endpoint was tested using Postman with a realistic JSON payload containing product, customer/store, time, and sales-related input variables. The API returned a successful HTTP 200 response together with a predicted next_period_net_sales value, demonstrating that the deployed model could accept structured business inputs and generate inference results correctly. As shown in Figure C3, the prediction endpoint returned a numerical sales forecast of approximately 120.83, which is a plausible output for the sample business scenario provided. This supports the face validity of the deployed service, since the prediction is consistent with the scale and nature of the historical sales inputs used in the request. 
- 
+<p align="center">
+ <img width="452" height="429" alt="image" src="https://github.com/user-attachments/assets/59051343-dfc2-41fd-a4d6-0a63439271a7" />
 Figure C3: Postman test of the /predict endpoint with a realistic JSON payload and returned sales forecast
- 
+</p>
 Overall, this demonstrates that the production API is operational, containerised successfully, connected to MLflow-managed model artifacts, and ready to serve prediction requests for downstream applications, while also providing the flexibility needed for A/B testing in the web application described in Task D.
-## Task D (Monitoring and Feedback Loop):
-For Task D, a Streamlit-based web application was developed to consume the REST web service created in Task C and support forward-looking sales planning. The web application addresses the business problem by allowing the user to generate next-period demand forecasts at a product-store/customer level using realistic historical patterns rather than arbitrary manual inputs. As shown in Figure D1, the application includes a Data Explorer tab that summarises historical product-store combinations using reference data derived from the training dataset. This helps the user understand realistic sales patterns, such as which product-store combinations have higher average monthly sales, and supports selection of a historical combination as a starting point for prediction.  
+
+### Task D (Monitoring and Feedback Loop):
+
+For Task D, a Streamlit-based web application was developed to consume the REST web service created in Task C and support forward-looking sales planning. The web application addresses the business problem by allowing the user to generate next-period demand forecasts at a product-store/customer level using realistic historical patterns rather than arbitrary manual inputs. As shown in Figure D1, the application includes a Data Explorer tab that summarises historical product-store combinations using reference data derived from the training dataset. This helps the user understand realistic sales patterns, such as which product-store combinations have higher average monthly sales, and supports selection of a historical combination as a starting point for prediction.
+<p align="center">
+<img width="451" height="180" alt="image" src="https://github.com/user-attachments/assets/525c3bd9-9c6a-4299-a539-55227e384ac7" />
 Figure D1: Data Explorer tab showing top product-store combinations by average monthly sales and historical reference summary
+</p>
 After a combination is chosen, the form is automatically pre-filled with representative historical values, and the user can then adjust key business variables such as month, current sales, discount amount, and previous month sales before running a forecast. As shown in Figure D2 and Figure D3, the Live Prediction page also displays the selected model’s input features in descending order of SHAP importance, together with each feature’s contribution to total importance, making the interface more interpretable and explainable from a business perspective.
- 
+<p align="center">
+ <img width="460" height="248" alt="image" src="https://github.com/user-attachments/assets/c903e20e-cbbe-49b9-a4bf-7c83d196ee11" />
 Figure D2: Web application after a prediction, showing successful forecast generation using A/B testing
- 
+</p>
+<p align="center">
+ <img width="473" height="211" alt="image" src="https://github.com/user-attachments/assets/40feee6a-147a-450c-8bc1-350b54d1fe68" />
 Figure D3: Live Prediction tab showing SHAP-ranked model features and user-adjustable business inputs
+</p>
 The same web application also implements a monitoring and feedback loop using input drift detection. In addition to supporting live predictions, the platform runs A/B testing between the two strongest production candidates, Gradient Boosting and Random Forest, by alternating predictions between the two models and logging the requests. As shown in Figure D4, the Prediction Dashboard compares both models side by side using post-production prediction counts, average predicted sales, latest prediction values, and the tracked MLflow performance metric. This provides a simple operational view of how each candidate model is being used in the production setting. 
- 
+<p align="center">
+ <img width="452" height="253" alt="image" src="https://github.com/user-attachments/assets/b22b4472-e329-4898-b0ee-f1f860b0800c" />
 Figure D4: Prediction Dashboard comparing Gradient Boosting and Random Forest side by side
+</p>
 For monitoring, the application captures the post-production input data from live prediction requests and compares them against reference training input data for each model using univariate statistical tests and frequency-based checks. Specifically, numerical features are monitored using the Kolmogorov–Smirnov (KS) test, while categorical features are checked using category frequency shift. As shown in Figure D5, the Input Drift Monitoring tab presents a side-by-side comparison for Gradient Boosting and Random Forest, including reference record counts, production record counts, number of features with possible drift, and detailed drift tables. A combined drift detail table is also shown to consolidate drift signals across both models. 
- 
+<p align="center">
+ <img width="452" height="249" alt="image" src="https://github.com/user-attachments/assets/e32901ff-11b1-40cd-a6d1-9b155fc1cc1f" />
 Figure D5: Input Drift Monitoring tab showing side-by-side drift comparison across both deployed models
+</p>
 Overall, this web application demonstrates not only how the production prediction service can be consumed to support business decision making, but also how post-deployment monitoring can be built into the same interface to track data quality and model reliability over time.
 
