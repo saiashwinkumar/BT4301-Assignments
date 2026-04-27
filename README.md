@@ -9,7 +9,9 @@ The above star schema is designed for store-customer sales analysis in the Adven
 The central table is fact_store_sales, at the grain of one sales order line per store customer transaction. It stores the measurable sales values such as quantity, unit price, gross amount, discount amount, margin amount, net amount, and header-level charges like tax and freight. The fact table links to four dimensions through surrogate keys, which supports efficient analytical queries and keeps the schema stable even if source-system business keys change. 
 
 For the sales fact table, three additional row-level transformations were introduced to make the data more useful for store-customer analysis. These transformations were chosen such that they do not rely on direct aggregations like sum, mean, or median, since those can already be performed later through the star schema.
+
 •	The first transformation is gross amount, calculated as order_qty × unit_price. This represents the original value of each sales order line before any discount is applied. It is useful for understanding the base sales value of store purchases and for comparing pre-discount and post-discount performance.
+
 •	The second transformation is discount amount, calculated as order_qty × unit_price × unit_price_discount. This captures the monetary value of the discount applied to each order line. For store customers, who often receive negotiated or volume-based discounts, this measure helps analyse the effect of discounting on sales transactions.
 
 •	The third transformation is margin amount, calculated as net_amount − (order_qty × standard_cost). This provides an estimated profit contribution for each sales order line after accounting for product cost. It is especially relevant for store customers because it allows profitability to be analysed at transaction level rather than only sales value.
