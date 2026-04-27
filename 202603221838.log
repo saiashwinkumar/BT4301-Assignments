@@ -1,0 +1,2 @@
+FINGERPRINT_MISMATCH | fact_store_sales_key=1 | sales_order_id=43659 | sales_order_detail_id=1 | stored=3d670963144b992b1882bc9eceb9c603c90ce6c15d8d211c5705105b0b07e548 | expected=89afd003eadf44bcfa1ad1f82c88631e8fd2f9bcf62f7775a29be29d1095ee8e
+FINGERPRINT_MISMATCH | fact_store_sales_key=2 | sales_order_id=43659 | sales_order_detail_id=2 | stored=1901042d28d4d7b4490bbc137f4ca1f253c7867921cf0f63ef36c8789b4e3f94 | expected=2616d63d18d8cf528549b671c2ea38275044486158ebe6a1e640a3155f94a6bb
